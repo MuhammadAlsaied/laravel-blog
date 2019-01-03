@@ -178,7 +178,7 @@ class PostsController extends Controller
         if (auth()->user()->id != $post->user_id) {
             return abort(403);
         }
-        if ($post->image != 'noimage.jpg') {
+        if ($post->image != '1kCaPme-RMyyw_7EpOgIST7CN4l8aiWW0') {
             Storage::disk('google')->delete($post->image);
         }
         $post->delete();
