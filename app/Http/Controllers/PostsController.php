@@ -3,10 +3,21 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Post;
 
 class PostsController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth', ['except'=>['index','show']]);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -41,12 +52,23 @@ class PostsController extends Controller
         //
         $this->validate($request, [
           'title'=>'required',
-          'body'=>'required|min:100'
+          'body'=>'required|min:100',
+          'image' => 'image|nullable|max:1999'
         ]);
-
+        if ($request->hasFile('image')) {
+            $filenameWithExt = $request->file('image')->getClientOriginalName();
+            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+            $extension = $request->file('image')->getClientOriginalExtension();
+            $fileNameToStore= $filename.'_'.time().'.'.$extension;
+            $path = $request->file('image')->storeAs('public/images', $fileNameToStore);
+        } else {
+            $fileNameToStore = 'noimage.jpg';
+        }
         $post = new Post();
         $post->title = $request->input('title');
         $post->body = $request->input('body');
+        $post->user_id = auth()->user()->id;
+        $post->image = $fileNameToStore;
         $post->save();
         return redirect('/posts')->with('success', "Post is created successfully");
     }
@@ -77,6 +99,9 @@ class PostsController extends Controller
         if (!$post) {
             return abort(404);
         }
+        if (auth()->user()->id != $post->user_id) {
+            return abort(403);
+        }
         return view('posts.edit')->with('post', $post);
     }
 
@@ -92,15 +117,36 @@ class PostsController extends Controller
         //
         $this->validate($request, [
           'title'=>'required',
-          'body'=>'required|min:100'
+          'body'=>'required|min:100',
+          'image' => 'image|nullable|max:1999'
+
         ]);
+
+        if ($request->hasFile('image')) {
+            $filenameWithExt = $request->file('image')->getClientOriginalName();
+            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+            $extension = $request->file('image')->getClientOriginalExtension();
+            $fileNameToStore= $filename.'_'.time().'.'.$extension;
+
+            $path = $request->file('image')->storeAs('public/images', $fileNameToStore);
+        }
 
         $post = Post::find($id);
         if (!$post) {
             return abort(404);
         }
+        if (auth()->user()->id != $post->user_id) {
+            return abort(403);
+        }
+
         $post->title = $request->input('title');
         $post->body = $request->input('body');
+        if ($request->hasFile('image')) {
+            if ($post->image != 'noimage.jpg') {
+                Storage::delete('public/images/'.$post->image);
+            }
+            $post->image = $fileNameToStore;
+        }
         $post->save();
         return redirect('/posts')->with('success', "Post is updated successfully");
     }
@@ -113,7 +159,14 @@ class PostsController extends Controller
      */
     public function destroy($id)
     {
-        Post::find($id)->delete();
+        $post = Post::find($id);
+        if (auth()->user()->id != $post->user_id) {
+            return abort(403);
+        }
+        if ($post->image != 'noimage.jpg') {
+            Storage::delete('public/images/'.$post->image);
+        }
+        $post->delete();
         return redirect('/posts')->with('success', "Post is deleted successfully");
     }
 }
