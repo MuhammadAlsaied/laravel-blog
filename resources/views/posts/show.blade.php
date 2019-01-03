@@ -3,7 +3,9 @@
 @section('content')
 <h1>{{$post->title}}</h1>
 <small>Published on {{$post->created_at ." By ".$post->user->name}}</small><hr />
-<img class="img-fluid" src="/storage/images/{{$post->image}}"  />
+<div class="col-md-12">
+  <img class="mx-auto d-block img-fluid" src="{{$post->image_url}}"  />
+</div>
 <p>
   {!!$post->body!!}
 </p>

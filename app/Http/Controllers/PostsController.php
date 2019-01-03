@@ -8,6 +8,8 @@ use App\Post;
 
 class PostsController extends Controller
 {
+
+
     /**
      * Create a new controller instance.
      *
@@ -60,7 +62,8 @@ class PostsController extends Controller
             $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
             $extension = $request->file('image')->getClientOriginalExtension();
             $fileNameToStore= $filename.'_'.time().'.'.$extension;
-            $path = $request->file('image')->storeAs('public/images', $fileNameToStore);
+            //    $path = $request->file('image')->storeAs('public/images', $fileNameToStore);
+            Storage::disk('google')->put($fileNameToStore, file_get_contents($request->file('image')->getRealPath()));
         } else {
             $fileNameToStore = 'noimage.jpg';
         }
@@ -68,7 +71,15 @@ class PostsController extends Controller
         $post->title = $request->input('title');
         $post->body = $request->input('body');
         $post->user_id = auth()->user()->id;
-        $post->image = $fileNameToStore;
+        if ($request->hasFile('image')) {
+            $post->image_url = Storage::disk('google')->url($fileNameToStore);
+            $parts = parse_url($post->image_url);
+            parse_str($parts['query'], $query);
+            $post->image = $query['id'];
+        } else {
+            $post->image_url = "https://drive.google.com/uc?id=1kCaPme-RMyyw_7EpOgIST7CN4l8aiWW0";
+            $post->image = "1kCaPme-RMyyw_7EpOgIST7CN4l8aiWW0";
+        }
         $post->save();
         return redirect('/posts')->with('success', "Post is created successfully");
     }
@@ -128,7 +139,8 @@ class PostsController extends Controller
             $extension = $request->file('image')->getClientOriginalExtension();
             $fileNameToStore= $filename.'_'.time().'.'.$extension;
 
-            $path = $request->file('image')->storeAs('public/images', $fileNameToStore);
+            //$path = $request->file('image')->storeAs('public/images', $fileNameToStore);
+            Storage::disk('google')->put($fileNameToStore, file_get_contents($request->file('image')->getRealPath()));
         }
 
         $post = Post::find($id);
@@ -143,9 +155,12 @@ class PostsController extends Controller
         $post->body = $request->input('body');
         if ($request->hasFile('image')) {
             if ($post->image != 'noimage.jpg') {
-                Storage::delete('public/images/'.$post->image);
+                Storage::disk('google')->delete($post->image);
             }
-            $post->image = $fileNameToStore;
+            $post->image_url = Storage::disk('google')->url($fileNameToStore);
+            $parts = parse_url($post->image_url);
+            parse_str($parts['query'], $query);
+            $post->image = $query['id'];
         }
         $post->save();
         return redirect('/posts')->with('success', "Post is updated successfully");
@@ -164,7 +179,7 @@ class PostsController extends Controller
             return abort(403);
         }
         if ($post->image != 'noimage.jpg') {
-            Storage::delete('public/images/'.$post->image);
+            Storage::disk('google')->delete($post->image);
         }
         $post->delete();
         return redirect('/posts')->with('success', "Post is deleted successfully");

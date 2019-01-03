@@ -7,7 +7,7 @@
       <div class="card card-body bg-light">
         <div class="row">
           <div class="col-sm-2 col-xs-2">
-            <img class="img-fluid" style="width:100%" src="/storage/images/{{$post->image}}"  />
+            <img class="img-fluid" style="width:100%" src="{{$post->image_url}}"  />
           </div>
           <div class="col-sm-10 col-xs-10">
             <a href="/posts/{{$post->id}}"<h3>{{$post->title}}</h3></a><br />

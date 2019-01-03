@@ -163,6 +163,7 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         Collective\Html\HtmlServiceProvider::class,
         Unisharp\Ckeditor\ServiceProvider::class,
+        App\Providers\GoogleDriveServiceProvider::class,
         /*
          * Package Service Providers...
          */
